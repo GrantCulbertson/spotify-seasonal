@@ -25,7 +25,7 @@ console.log('\nOpening browser for Spotify authorization...');
 console.log('If the browser does not open, visit this URL manually:\n');
 console.log(authUrl, '\n');
 
-// Try to open browser (Windows, then macOS, silently ignore failure)
+// Try to open browser on Windows (silently ignore failure)
 exec(`start "" "${authUrl}"`, () => {});
 
 const server = http.createServer(async (req, res) => {
@@ -73,7 +73,7 @@ const server = http.createServer(async (req, res) => {
   } catch (err) {
     res.end('Internal error — check terminal.');
     server.close();
-    throw err;
+    console.error('Token exchange error:', err);
   }
 });
 
