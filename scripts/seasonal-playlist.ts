@@ -117,13 +117,19 @@ async function main(): Promise<void> {
     playlistTrackCount: resolvedUris.length,
   };
 
-  // 5. Generate narrative and send email
-  console.log('Generating narrative with Claude Haiku...');
-  const narrative = await generateNarrative(stats);
-  console.log(`Narrative: ${narrative}`);
+  // 5. Generate narrative and send email (skipped if ANTHROPIC_API_KEY or RESEND_API_KEY not set)
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.log('ANTHROPIC_API_KEY not set — skipping narrative and email.');
+  } else if (!process.env.RESEND_API_KEY) {
+    console.log('RESEND_API_KEY not set — skipping email.');
+  } else {
+    console.log('Generating narrative with Claude Haiku...');
+    const narrative = await generateNarrative(stats);
+    console.log(`Narrative: ${narrative}`);
 
-  console.log('Sending email...');
-  await sendEmail(stats, narrative);
+    console.log('Sending email...');
+    await sendEmail(stats, narrative);
+  }
 
   console.log('Done.');
   } finally {

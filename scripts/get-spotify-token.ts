@@ -4,7 +4,7 @@ import { URL } from 'node:url';
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const REDIRECT_URI = 'http://localhost:8888/callback';
+const REDIRECT_URI = 'http://127.0.0.1:8888/callback';
 const SCOPE = 'playlist-modify-public playlist-modify-private';
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
@@ -31,7 +31,7 @@ exec(`start "" "${authUrl}"`, () => {});
 const server = http.createServer(async (req, res) => {
   if (!req.url?.startsWith('/callback')) return;
 
-  const url = new URL(req.url, 'http://localhost:8888');
+  const url = new URL(req.url, 'http://127.0.0.1:8888');
   const code = url.searchParams.get('code');
   const error = url.searchParams.get('error');
 
@@ -78,5 +78,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(8888, () => {
-  console.log('Listening on http://localhost:8888/callback — waiting for Spotify redirect...');
+  console.log('Listening on http://127.0.0.1:8888/callback — waiting for Spotify redirect...');
 });
