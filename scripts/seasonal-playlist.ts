@@ -6,7 +6,8 @@ import { generateNarrative, sendEmail, type SeasonStats } from './email.js';
 const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 async function main(): Promise<void> {
-  const seasonYear = getEndedSeasonYear();
+  const seasonArg = process.argv.find((a) => a.startsWith('--season='))?.split('=')[1];
+  const seasonYear = seasonArg ?? getEndedSeasonYear();
   console.log(`Running seasonal playlist for: ${seasonYear}`);
 
   const db = getDb();
