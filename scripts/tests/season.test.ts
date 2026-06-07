@@ -33,4 +33,9 @@ describe('getEndedSeasonYear', () => {
     assert.equal(getEndedSeasonYear(new Date('2025-09-01T09:00:00Z')), "Summer'25"));
   it("Dec 1 → Fall that just ended",   () =>
     assert.equal(getEndedSeasonYear(new Date('2025-12-01T09:00:00Z')), "Fall'25"));
+  it("throws on a non-seasonal-start month", () =>
+    assert.throws(
+      () => getEndedSeasonYear(new Date('2025-01-15T09:00:00Z')),
+      /unexpected month: 1/,
+    ));
 });
