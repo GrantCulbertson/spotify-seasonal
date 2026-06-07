@@ -31,10 +31,10 @@ async function main(): Promise<void> {
 
   if (tracks.length === 0) {
     console.log('No qualifying tracks — skipping playlist and email.');
-    await closeDb();
     return;
   }
 
+  try {
   // 2. Resolve Spotify URIs
   console.log('Resolving Spotify URIs (concurrency: 10)...');
   const uris = await resolveUris(
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
        GROUP BY track_name, artist_name ORDER BY cnt DESC LIMIT 3`,
       [seasonYear],
     ),
-    db.query<{ dow: number; cnt: string }>(
+    db.query<{ dow: string; cnt: string }>(
       `SELECT EXTRACT(DOW FROM date)::int AS dow, COUNT(*) AS cnt
        FROM scrobbles WHERE season_year = $1
        GROUP BY dow ORDER BY cnt DESC LIMIT 1`,
@@ -95,7 +95,7 @@ async function main(): Promise<void> {
     artist: r.artist_name,
     count: Number(r.cnt),
   }));
-  const mostActiveDow = activeDayRes.rows[0]?.dow ?? 0;
+  const mostActiveDow = Number(activeDayRes.rows[0]?.dow ?? 0);
   const mostActiveDay = DOW_NAMES[mostActiveDow] ?? 'Unknown';
 
   let vsLastSeasonPct: number | null = null;
@@ -125,8 +125,10 @@ async function main(): Promise<void> {
   console.log('Sending email...');
   await sendEmail(stats, narrative);
 
-  await closeDb();
   console.log('Done.');
+  } finally {
+    await closeDb();
+  }
 }
 
 main().catch((err) => {
