@@ -4,7 +4,11 @@ let pool: Pool | null = null;
 
 export function getDb(): Pool {
   if (!pool) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    pool = new Pool({ connectionString });
   }
   return pool;
 }
