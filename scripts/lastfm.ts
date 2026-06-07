@@ -38,7 +38,8 @@ export async function fetchScrobbles(fromUnix: number, toUnix: number): Promise<
       };
     };
 
-    const tracks = data.recenttracks?.track ?? [];
+    const rawTracks = data.recenttracks?.track;
+    const tracks = Array.isArray(rawTracks) ? rawTracks : rawTracks ? [rawTracks] : [];
     const totalPages = Number(data.recenttracks?.['@attr']?.totalPages ?? 1);
 
     for (const t of tracks) {
