@@ -1,0 +1,40 @@
+{
+  "name": "spotify-seasonal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test:scripts": "node --import tsx/esm --test scripts/tests/*.test.ts",
+    "typecheck:scripts": "tsc --noEmit -p tsconfig.scripts.json",
+    "daily-log": "npx tsx scripts/daily-log.ts",
+    "seasonal-playlist": "npx tsx scripts/seasonal-playlist.ts",
+    "backfill": "npx tsx scripts/backfill.ts",
+    "get-spotify-token": "npx tsx scripts/get-spotify-token.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GrantCulbertson/spotify-seasonal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/GrantCulbertson/spotify-seasonal/issues"
+  },
+  "homepage": "https://github.com/GrantCulbertson/spotify-seasonal#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.102.0",
+    "pg": "^8.21.0",
+    "resend": "^6.12.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
