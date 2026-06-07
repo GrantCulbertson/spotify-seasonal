@@ -99,7 +99,12 @@ export async function resolveUris(
     while (true) {
       const item = queue.shift();
       if (!item) break;
-      results[item.i] = await searchTrackUri(item.trackName, item.artistName);
+      try {
+        results[item.i] = await searchTrackUri(item.trackName, item.artistName);
+      } catch (err) {
+        console.error(`Failed to resolve URI for "${item.trackName}" by "${item.artistName}":`, err);
+        results[item.i] = null;
+      }
     }
   }
 
