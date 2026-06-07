@@ -30,7 +30,7 @@ export async function fetchScrobbles(fromUnix: number, toUnix: number): Promise<
         track: Array<{
           name: string;
           artist: { '#text': string };
-          album: { '#text': string };
+          album?: { '#text': string };
           date?: { uts: string };
           '@attr'?: { nowplaying?: string };
         }>;
