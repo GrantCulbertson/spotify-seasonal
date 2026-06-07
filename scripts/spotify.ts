@@ -1,4 +1,4 @@
-let cachedAccessToken: string | null = null;
+let tokenPromise: Promise<string> | null = null;
 
 async function refreshAccessToken(): Promise<string> {
   const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REFRESH_TOKEN } = process.env;
@@ -23,8 +23,8 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 async function getToken(): Promise<string> {
-  if (!cachedAccessToken) cachedAccessToken = await refreshAccessToken();
-  return cachedAccessToken;
+  if (!tokenPromise) tokenPromise = refreshAccessToken();
+  return tokenPromise;
 }
 
 async function spotifyFetch(path: string, options: RequestInit = {}): Promise<Response> {
@@ -41,7 +41,10 @@ async function spotifyFetch(path: string, options: RequestInit = {}): Promise<Re
 
 export async function getSpotifyUserId(): Promise<string> {
   const res = await spotifyFetch('/me');
-  if (!res.ok) throw new Error(`Spotify /me failed: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Spotify /me failed (${res.status}): ${body}`);
+  }
   const data = await res.json() as { id: string };
   return data.id;
 }
