@@ -22,7 +22,7 @@ async function main(): Promise<void> {
      FROM scrobbles
      WHERE season_year = $1
      GROUP BY track_name, artist_name
-     HAVING COUNT(*) >= 15
+     HAVING COUNT(*) >= 10
      ORDER BY COUNT(*) DESC`,
     [seasonYear],
   );
@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   console.log(`Found ${tracks.length} qualifying tracks (≥15 plays)`);
 
   if (tracks.length === 0) {
-    console.log('No qualifying tracks — skipping playlist and email.');
+    console.log('No qualifying tracks — skipping playlist and email. (threshold: ≥10 plays)');
     return;
   }
 
