@@ -1,6 +1,6 @@
 import { getDb, closeDb } from './db.js';
 import { getEndedSeasonYear } from './season.js';
-import { resolveUris, getSpotifyUserId, createPlaylist, addTracksToPlaylist } from './spotify.js';
+import { resolveUris, getSpotifyUserId, createPlaylist, addTracksToPlaylist, getPlaylistCoverImage } from './spotify.js';
 import { generateNarrative, sendEmail, type SeasonStats } from './email.js';
 
 const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -52,6 +52,7 @@ async function main(): Promise<void> {
     `Tracks with ≥10 plays during ${seasonYear}`,
   );
   await addTracksToPlaylist(playlistId, resolvedUris);
+  const playlistImageUrl = await getPlaylistCoverImage(playlistId);
   console.log(`Playlist created: ${playlistUrl}`);
 
   // 4. Gather stats
@@ -116,6 +117,7 @@ async function main(): Promise<void> {
     vsLastSeasonPct,
     playlistUrl,
     playlistTrackCount: resolvedUris.length,
+    playlistImageUrl: playlistImageUrl ?? undefined,
   };
 
   // 5. Generate narrative and send email (skipped if ANTHROPIC_API_KEY or RESEND_API_KEY not set)

@@ -10,6 +10,7 @@ export interface SeasonStats {
   vsLastSeasonPct: number | null;
   playlistUrl: string;
   playlistTrackCount: number;
+  playlistImageUrl?: string;
 }
 
 export async function generateNarrative(stats: SeasonStats): Promise<string> {
@@ -22,13 +23,13 @@ export async function generateNarrative(stats: SeasonStats): Promise<string> {
 
   const prompt =
     `Write a warm, personal 2–3 sentence summary of someone's listening season. ` +
-    `They listened to ${stats.totalScrobbles} songs total. ` +
+    `They listened to ${stats.totalScrobbles} songs total (${vsText}). ` +
     `Their top artist was ${stats.topArtists[0]?.name ?? 'unknown'}, ` +
     `and their most-played track was "${stats.topTracks[0]?.name ?? 'unknown'}" ` +
     `by ${stats.topTracks[0]?.artist ?? 'unknown'}. ` +
-    `They scrobbled ${vsText}. ` +
     `Their most active listening day was ${stats.mostActiveDay}. ` +
-    `Keep it specific, warm, and fun — like a note from a friend who noticed what you were listening to.`;
+    `Be specific and grounded in these exact details — no generic filler about "sonic journeys" or "discovering new sounds". ` +
+    `Do not use markdown headers or formatting of any kind. Plain sentences only.`;
 
   const message = await client.messages.create({
     model: 'claude-haiku-4-5',
@@ -38,7 +39,8 @@ export async function generateNarrative(stats: SeasonStats): Promise<string> {
 
   const block = message.content[0];
   if (block.type !== 'text') throw new Error('Unexpected response type from Claude');
-  return block.text;
+  // Strip any leading markdown header lines (e.g. "# Title\n\n") Claude may emit
+  return block.text.replace(/^#+\s+[^\n]*\n+/, '').trim();
 }
 
 export async function sendEmail(stats: SeasonStats, narrative: string): Promise<void> {
@@ -61,7 +63,11 @@ export async function sendEmail(stats: SeasonStats, narrative: string): Promise<
 <html>
 <body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111;background:#fff">
   <h2 style="margin-top:0">Your ${esc(stats.seasonYear)} playlist is ready 🎵</h2>
-  <p style="line-height:1.6">${esc(narrative)}</p>
+  <p style="line-height:1.6">${esc(narrative)}</p>${stats.playlistImageUrl ? `
+  <a href="${esc(stats.playlistUrl)}" style="display:block;margin:20px 0">
+    <img src="${esc(stats.playlistImageUrl)}" alt="${esc(stats.seasonYear)} playlist cover"
+         style="width:100%;max-width:300px;border-radius:8px;display:block">
+  </a>` : ''}
   <hr style="border:none;border-top:1px solid #e0e0e0;margin:24px 0">
   <h3 style="text-transform:uppercase;letter-spacing:0.08em;font-size:0.8em;color:#444;margin-bottom:12px">
     ${esc(stats.seasonYear)} by the numbers

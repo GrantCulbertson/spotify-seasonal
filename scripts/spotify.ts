@@ -74,6 +74,13 @@ export async function createPlaylist(
   return { id: data.id, externalUrl: data.external_urls.spotify };
 }
 
+export async function getPlaylistCoverImage(playlistId: string): Promise<string | null> {
+  const res = await spotifyFetch(`/playlists/${playlistId}/images`);
+  if (!res.ok) return null;
+  const data = await res.json() as Array<{ url: string; height: number | null; width: number | null }>;
+  return data[0]?.url ?? null;
+}
+
 export async function addTracksToPlaylist(playlistId: string, uris: string[]): Promise<void> {
   for (let i = 0; i < uris.length; i += 100) {
     const chunk = uris.slice(i, i + 100);
