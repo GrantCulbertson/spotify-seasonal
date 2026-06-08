@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   );
 
   const tracks = tracksResult.rows;
-  console.log(`Found ${tracks.length} qualifying tracks (≥15 plays)`);
+  console.log(`Found ${tracks.length} qualifying tracks (≥10 plays)`);
 
   if (tracks.length === 0) {
     console.log('No qualifying tracks — skipping playlist and email. (threshold: ≥10 plays)');
