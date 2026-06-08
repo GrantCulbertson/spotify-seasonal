@@ -49,7 +49,7 @@ async function main(): Promise<void> {
   const { id: playlistId, externalUrl: playlistUrl } = await createPlaylist(
     userId,
     seasonYear,
-    `Tracks with ≥15 plays during ${seasonYear}`,
+    `Tracks with ≥10 plays during ${seasonYear}`,
   );
   await addTracksToPlaylist(playlistId, resolvedUris);
   console.log(`Playlist created: ${playlistUrl}`);
