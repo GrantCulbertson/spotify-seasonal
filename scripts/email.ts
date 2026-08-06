@@ -110,6 +110,50 @@ export async function sendEmail(stats: SeasonStats, narrative: string): Promise<
   console.log(`Email sent to ${process.env.RESEND_TO_EMAIL}`);
 }
 
+/**
+ * Warn that no scrobbles have arrived for days. Almost always means the
+ * Spotify → Last.fm connection has dropped and needs re-authorizing; the
+ * listening data for the gap is unrecoverable, so this wants to be noticed.
+ */
+export async function sendStaleAlert(daysSinceLastScrobble: number, lastScrobbleDate: string): Promise<void> {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_TO_EMAIL) {
+    console.warn('RESEND_API_KEY / RESEND_TO_EMAIL not set — cannot send staleness alert.');
+    return;
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const html = `<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111;background:#fff">
+  <h2 style="margin-top:0">⚠️ No scrobbles for ${daysSinceLastScrobble} days</h2>
+  <p style="line-height:1.6">
+    The daily log has found nothing new since <strong>${esc(lastScrobbleDate)}</strong>.
+    The most likely cause is that the Spotify connection on Last.fm has dropped.
+  </p>
+  <p style="line-height:1.6">
+    Reconnect it at
+    <a href="https://www.last.fm/settings/applications">last.fm/settings/applications</a>,
+    then confirm a fresh play shows up on
+    <a href="https://www.last.fm/user/shura4K">your Last.fm profile</a>.
+  </p>
+  <p style="line-height:1.6;color:#666;font-size:0.9em">
+    Anything played while the connection was down is not recoverable — Last.fm never
+    received it, so it can't be backfilled. This alert repeats weekly until scrobbles resume.
+  </p>
+</body>
+</html>`;
+
+  await resend.emails.send({
+    from: 'Seasonal Playlists <onboarding@resend.dev>',
+    to: process.env.RESEND_TO_EMAIL,
+    subject: `⚠️ No Spotify scrobbles in ${daysSinceLastScrobble} days`,
+    html,
+  });
+
+  console.log(`Staleness alert sent to ${process.env.RESEND_TO_EMAIL}`);
+}
+
 function esc(str: string): string {
   return str
     .replace(/&/g, '&amp;')

@@ -37,8 +37,25 @@ All secrets are stored at [github.com/GrantCulbertson/spotify-seasonal/settings/
 
 | Workflow | Schedule | What it does |
 |---|---|---|
-| `daily-log.yml` | 9am UTC every day | Pulls yesterday's Last.fm scrobbles into Neon |
+| `daily-log.yml` | 9am UTC every day | Pulls yesterday's Last.fm scrobbles into Neon, alerts if the feed has gone stale |
 | `seasonal-playlist.yml` | 9am UTC on Mar 1, Jun 1, Sep 1, Dec 1 | Creates Spotify playlist, generates narrative, sends email |
+
+## Staleness Alerts
+
+A broken Spotify → Last.fm connection is indistinguishable from a quiet day: both
+report zero scrobbles and both pass. So when the daily log finds nothing, it checks
+how long the silence has run.
+
+After **3 consecutive scrobble-free days**, the run emails you and exits non-zero so
+it shows up red in Actions. It re-alerts weekly (day 3, 10, 17, …) until scrobbles
+resume, rather than emailing daily or going quiet after one message.
+
+Requires `RESEND_API_KEY` and `RESEND_TO_EMAIL`; without them the outage is logged
+loudly and the run still fails, but no email goes out.
+
+**Data lost during an outage cannot be recovered** — Last.fm never received those
+plays, so there is nothing to backfill. Fix the connection at
+[last.fm/settings/applications](https://www.last.fm/settings/applications).
 
 ## Manual Testing
 

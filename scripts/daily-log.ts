@@ -1,6 +1,40 @@
 import { getDb, closeDb } from './db.js';
 import { fetchScrobbles } from './lastfm.js';
 import { computeSeason, computeSeasonYear } from './season.js';
+import { daysSince, shouldAlert, STALE_AFTER_DAYS } from './staleness.js';
+import { sendStaleAlert } from './email.js';
+
+/**
+ * A dead upstream and a genuinely quiet day both look like "0 scrobbles", so
+ * check how long the silence has run and shout if it's gone on too long.
+ * Returns true if the feed looks broken.
+ */
+async function checkStaleness(now: Date): Promise<boolean> {
+  const db = getDb();
+  const res = await db.query<{ last: Date | null }>(
+    `SELECT MAX(played_at) AS last FROM scrobbles`,
+  );
+
+  const last = res.rows[0]?.last;
+  if (!last) {
+    console.log('No scrobbles in the database yet — skipping staleness check.');
+    return false;
+  }
+
+  const days = daysSince(new Date(last), now);
+  const lastDate = new Date(last).toISOString().slice(0, 10);
+  console.log(`Last scrobble in database: ${lastDate} (${days} days ago)`);
+
+  if (days < STALE_AFTER_DAYS) return false;
+
+  console.error(`No scrobbles for ${days} days — the Last.fm feed looks broken.`);
+  if (shouldAlert(days)) {
+    await sendStaleAlert(days, lastDate);
+  } else {
+    console.log('Alert already sent for this outage — next reminder in a few days.');
+  }
+  return true;
+}
 
 async function main(): Promise<void> {
   const now = new Date();
@@ -18,6 +52,13 @@ async function main(): Promise<void> {
 
   if (scrobbles.length === 0) {
     console.log('Nothing to insert.');
+    try {
+      if (await checkStaleness(now)) {
+        process.exitCode = 1;  // fail the run so the outage is visible in Actions
+      }
+    } finally {
+      await closeDb();
+    }
     return;
   }
 
