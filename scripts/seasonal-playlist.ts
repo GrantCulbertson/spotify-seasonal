@@ -12,13 +12,17 @@ async function main(): Promise<void> {
 
   const db = getDb();
 
-  // 1. Qualifying tracks (≥15 plays this season)
+  // 1. Qualifying tracks (≥10 plays this season). The most-scrobbled album for
+  // each track disambiguates which Spotify release to pick.
   const tracksResult = await db.query<{
     track_name: string;
     artist_name: string;
+    album_name: string | null;
     play_count: string;
   }>(
-    `SELECT track_name, artist_name, COUNT(*) AS play_count
+    `SELECT track_name, artist_name,
+            MODE() WITHIN GROUP (ORDER BY album_name) AS album_name,
+            COUNT(*) AS play_count
      FROM scrobbles
      WHERE season_year = $1
      GROUP BY track_name, artist_name
@@ -39,7 +43,11 @@ async function main(): Promise<void> {
   // 2. Resolve Spotify URIs
   console.log('Resolving Spotify URIs (concurrency: 10)...');
   const uris = await resolveUris(
-    tracks.map((t) => ({ trackName: t.track_name, artistName: t.artist_name })),
+    tracks.map((t) => ({
+      trackName: t.track_name,
+      artistName: t.artist_name,
+      albumName: t.album_name,
+    })),
   );
   const resolvedUris = uris.filter((u): u is string => u !== null);
   console.log(`Resolved ${resolvedUris.length}/${tracks.length} URIs (${tracks.length - resolvedUris.length} unmatched, skipped)`);

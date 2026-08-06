@@ -1,3 +1,5 @@
+import { pickBestMatch, type SpotifyCandidate } from './track-match.js';
+
 let tokenPromise: Promise<string> | null = null;
 
 async function refreshAccessToken(): Promise<string> {
@@ -49,12 +51,50 @@ export async function getSpotifyUserId(): Promise<string> {
   return data.id;
 }
 
-export async function searchTrackUri(trackName: string, artistName: string): Promise<string | null> {
-  const q = `track:${trackName} artist:${artistName}`;
-  const res = await spotifyFetch(`/search?q=${encodeURIComponent(q)}&type=track&limit=1`);
-  if (!res.ok) return null;
-  const data = await res.json() as { tracks: { items: Array<{ uri: string }> } };
-  return data.tracks?.items?.[0]?.uri ?? null;
+interface SearchItem {
+  uri: string;
+  name: string;
+  explicit: boolean;
+  popularity: number;
+  artists: Array<{ name: string }>;
+  album: { name: string };
+}
+
+async function search(q: string): Promise<SpotifyCandidate[]> {
+  const res = await spotifyFetch(`/search?q=${encodeURIComponent(q)}&type=track&limit=20`);
+  if (!res.ok) return [];
+  const data = await res.json() as { tracks?: { items?: SearchItem[] } };
+  return (data.tracks?.items ?? []).map((i) => ({
+    uri: i.uri,
+    name: i.name,
+    artists: i.artists.map((a) => a.name),
+    album: i.album?.name ?? '',
+    explicit: i.explicit,
+    popularity: i.popularity ?? 0,
+  }));
+}
+
+export async function searchTrackUri(
+  trackName: string,
+  artistName: string,
+  albumName?: string | null,
+): Promise<string | null> {
+  // Field-filtered search first; fall back to a loose query, which recalls
+  // tracks whose Last.fm metadata doesn't line up with Spotify's fields.
+  let candidates = await search(`track:${trackName} artist:${artistName}`);
+  if (candidates.length === 0) {
+    candidates = await search(`${trackName} ${artistName}`);
+  }
+
+  const match = pickBestMatch({ trackName, artistName, albumName }, candidates);
+  if (!match) {
+    console.warn(
+      `  No confident match for "${trackName}" by "${artistName}" ` +
+      `(${candidates.length} candidates considered) — skipping`,
+    );
+    return null;
+  }
+  return match.uri;
 }
 
 export async function createPlaylist(
@@ -96,7 +136,7 @@ export async function addTracksToPlaylist(playlistId: string, uris: string[]): P
 }
 
 export async function resolveUris(
-  tracks: Array<{ trackName: string; artistName: string }>,
+  tracks: Array<{ trackName: string; artistName: string; albumName?: string | null }>,
   concurrency = 10,
 ): Promise<Array<string | null>> {
   const results: Array<string | null> = new Array(tracks.length).fill(null);
@@ -107,7 +147,7 @@ export async function resolveUris(
       const item = queue.shift();
       if (!item) break;
       try {
-        results[item.i] = await searchTrackUri(item.trackName, item.artistName);
+        results[item.i] = await searchTrackUri(item.trackName, item.artistName, item.albumName);
       } catch (err) {
         console.error(`Failed to resolve URI for "${item.trackName}" by "${item.artistName}":`, err);
         results[item.i] = null;
