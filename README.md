@@ -39,7 +39,7 @@ All secrets are stored at [github.com/GrantCulbertson/spotify-seasonal/settings/
 |---|---|---|
 | `daily-log.yml` | 9am UTC every day | Pulls yesterday's Last.fm scrobbles into Neon, alerts if the feed has gone stale |
 | `seasonal-playlist.yml` | 9am UTC on Mar 1, Jun 1, Sep 1, Dec 1 | Creates Spotify playlist, generates narrative, sends email |
-| `keepalive.yml` | 8am UTC every day | Commits a timestamp once the repo has gone 59 days without a commit (see below) |
+| `keepalive.yml` | 8am UTC every day | Commits a timestamp once the repo has gone 50 days without a commit (see below) |
 | `backfill.yml` | Manual only | Refills scrobbles from a start date through yesterday |
 
 ## Keepalive
@@ -49,7 +49,7 @@ commit**. That's what stopped the daily log on 2026-10-05 — and since the
 staleness alert runs *inside* that workflow, nothing warned about it.
 
 `keepalive.yml` checks daily and commits to `.github/keepalive` once the last
-commit is 59 days old. Real commits reset the clock, so it usually does nothing.
+commit is 50 days old — a 10-day margin, since scheduled runs can be delayed or skipped. Real commits reset the clock, so it usually does nothing.
 
 If a workflow does get disabled anyway, re-enable it and backfill the gap:
 

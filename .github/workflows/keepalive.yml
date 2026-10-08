@@ -20,7 +20,7 @@ jobs:
 
       - name: Commit if the repo has been quiet too long
         env:
-          KEEPALIVE_AFTER_DAYS: 59
+          KEEPALIVE_AFTER_DAYS: 50
         run: |
           last=$(git log -1 --format=%ct)
           age=$(( ( $(date +%s) - last ) / 86400 ))
