@@ -1,0 +1,31 @@
+name: Backfill Scrobbles
+
+# Manual only: refills a date range from Last.fm. Safe to re-run — existing
+# rows are skipped. Only recovers plays Last.fm actually received.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Start date (YYYY-MM-DD). Backfills through yesterday. Blank = full history since 2014.'
+        required: false
+        default: ''
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Backfill scrobbles into Neon
+        run: npx tsx scripts/backfill.ts --from="$FROM_DATE"
+        env:
+          FROM_DATE: ${{ github.event.inputs.from }}
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

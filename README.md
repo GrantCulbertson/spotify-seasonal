@@ -39,6 +39,24 @@ All secrets are stored at [github.com/GrantCulbertson/spotify-seasonal/settings/
 |---|---|---|
 | `daily-log.yml` | 9am UTC every day | Pulls yesterday's Last.fm scrobbles into Neon, alerts if the feed has gone stale |
 | `seasonal-playlist.yml` | 9am UTC on Mar 1, Jun 1, Sep 1, Dec 1 | Creates Spotify playlist, generates narrative, sends email |
+| `keepalive.yml` | 8am UTC every day | Commits a timestamp once the repo has gone 59 days without a commit (see below) |
+| `backfill.yml` | Manual only | Refills scrobbles from a start date through yesterday |
+
+## Keepalive
+
+GitHub disables scheduled workflows in public repos after **60 days without a
+commit**. That's what stopped the daily log on 2026-10-05 — and since the
+staleness alert runs *inside* that workflow, nothing warned about it.
+
+`keepalive.yml` checks daily and commits to `.github/keepalive` once the last
+commit is 59 days old. Real commits reset the clock, so it usually does nothing.
+
+If a workflow does get disabled anyway, re-enable it and backfill the gap:
+
+```bash
+gh workflow enable daily-log.yml
+gh workflow run backfill.yml -f from=YYYY-MM-DD
+```
 
 ## Staleness Alerts
 
@@ -79,6 +97,9 @@ npm run typecheck:scripts
 
 # Backfill historical scrobbles (safe to re-run)
 DATABASE_URL=<url> LASTFM_API_KEY=<key> npm run backfill
+
+# Backfill only from a given date through yesterday
+DATABASE_URL=<url> LASTFM_API_KEY=<key> npm run backfill -- --from=2026-10-05
 
 # Get a new Spotify refresh token (one-time setup)
 SPOTIFY_CLIENT_ID=<id> SPOTIFY_CLIENT_SECRET=<secret> npm run get-spotify-token

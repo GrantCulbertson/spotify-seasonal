@@ -5,10 +5,22 @@ import { computeSeason, computeSeasonYear } from './season.js';
 const BATCH_DAYS = 30;
 const RATE_LIMIT_MS = 250;
 
-// Adjust START_DATE if you want to go back further (Last.fm supports full history)
-const START_DATE = new Date('2014-01-01T00:00:00Z');
+// Full-history default (Last.fm supports it). Pass --from=YYYY-MM-DD to
+// refill a short window, e.g. after the daily workflow was disabled.
+const DEFAULT_START = '2014-01-01';
+
+function parseStartDate(): Date {
+  const fromArg = process.argv.find((a) => a.startsWith('--from='))?.split('=')[1];
+  const value = fromArg || DEFAULT_START;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || isNaN(date.getTime())) {
+    throw new Error(`Invalid --from date "${value}" — expected YYYY-MM-DD`);
+  }
+  return date;
+}
 
 async function main(): Promise<void> {
+  const START_DATE = parseStartDate();
   const db = getDb();
   let totalInserted = 0;
   let totalSkipped = 0;

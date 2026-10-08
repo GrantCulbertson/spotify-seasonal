@@ -1,0 +1,37 @@
+name: Keepalive
+
+# GitHub disables scheduled workflows in public repos after 60 days without
+# repository activity — which silently stopped the daily log on 2026-10-05.
+# Checks daily and commits a timestamp once the repo has been quiet for
+# KEEPALIVE_AFTER_DAYS. Any real commit resets the clock, so most checks no-op.
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Commit if the repo has been quiet too long
+        env:
+          KEEPALIVE_AFTER_DAYS: 59
+        run: |
+          last=$(git log -1 --format=%ct)
+          age=$(( ( $(date +%s) - last ) / 86400 ))
+          echo "Last commit was $age days ago (threshold: $KEEPALIVE_AFTER_DAYS)"
+          if [ "$age" -lt "$KEEPALIVE_AFTER_DAYS" ]; then
+            echo "Nothing to do."
+            exit 0
+          fi
+          date -u +%Y-%m-%dT%H:%M:%SZ > .github/keepalive
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/keepalive
+          git commit -m "chore: keepalive (repo quiet for $age days)"
+          git push
